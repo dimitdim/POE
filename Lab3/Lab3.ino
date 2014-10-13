@@ -2,7 +2,8 @@
 #include <Adafruit_MotorShield.h>
 #include "utility/Adafruit_PWMServoDriver.h"
 
-int Strips=48;
+int Strips=32;
+int dbnc=10;
 
 int Position=0;
 float Velocity=0;
@@ -12,8 +13,9 @@ int debounce=0;
 int old_colour=0;
 int colour=0;
 int last_change=0;
+boolean forward=true;
+
 int i;
-int dbnc=10;
 
 String inputString="";
 String cmd="";
@@ -24,8 +26,7 @@ Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 Adafruit_DCMotor *myMotor = AFMS.getMotor(1);
 
 int convert(int raw) {
-    if(raw<100) {return 0;}
-    else if(raw>300) {return 2;}
+    if(raw<300) {return 0;}
     else {return 1;}
 }
 
@@ -37,11 +38,8 @@ void encoder() {
     
     if(debounce>dbnc) {
         debounce=0;
-        int dif=(colour-old_colour)%3;
         count++;
         count=count%Strips;
-        //if (dif==1) {count=(count+1)%Strips;}
-        //else {count=(count-1)%Strips;}
         old_colour=colour;
         Position=(count*360/Strips);
         Velocity=(360000/Strips)/(millis()-last_change);
@@ -71,12 +69,14 @@ void loop() {
     if(stringComplete) {
         cmd=inputString.substring(0,inputString.indexOf('@')); //Split the input into command and value. The only reason this isn't '=' is because I like '@'
         val=inputString.substring(inputString.indexOf('@')+1).toInt();
-        stringComplete=false;
         
         if (cmd.equals(String("dbnc"))) {
             dbnc=val;
             Serial.println() && Serial.print("Debounce set: ") && Serial.println(dbnc) && Serial.println();
         }
+        
+        stringComplete=false;
+        inputString = "";
         cmd="";
         val=0;
         
