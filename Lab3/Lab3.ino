@@ -13,7 +13,7 @@ int old_colour=0;
 int colour=0;
 int last_change=0;
 int i;
-int dbnc;
+int dbnc=10;
 
 String inputString="";
 String cmd="";
@@ -25,7 +25,7 @@ Adafruit_DCMotor *myMotor = AFMS.getMotor(1);
 
 int convert(int raw) {
     if(raw<100) {return 0;}
-    else if(raw>600) {return 2;}
+    else if(raw>300) {return 2;}
     else {return 1;}
 }
 
@@ -44,7 +44,7 @@ void encoder() {
         //else {count=(count-1)%Strips;}
         old_colour=colour;
         Position=(count*360/Strips);
-        Velocity=(360/Strips)/(millis()-last_change);
+        Velocity=(360000/Strips)/(millis()-last_change);
         last_change=millis();
     }
 }
@@ -77,6 +77,8 @@ void loop() {
             dbnc=val;
             Serial.println() && Serial.print("Debounce set: ") && Serial.println(dbnc) && Serial.println();
         }
+        cmd="";
+        val=0;
         
         Serial.print("Position: ");
         Serial.print(Position);
