@@ -12,11 +12,35 @@ int last_change=0;
 String inputString="";
 String cmd="";
 int val=0;
-boolean StringCompleate=false;
+boolean stringComplete=false;
+
+int convert(int raw) {
+    if(raw<256) {return 0;}
+    else if(raw>767) {return 2;}
+    else {return 1;}
+}
+
+void encoder() {
+    colour=convert(analogRead(A0));
+    
+    if(colour!=old_colour) {debounce++;}
+    else {debounce=0;}
+    
+    if(debounce>2) {
+        debounce=0;
+        int dif=(colour-old_colour)%3;
+        if (dif==1) {count++%Strips;}
+        else {count--%Strips;}
+        old_colour=colour;
+        Position=count*360/Strips;
+        Velocity=(360/Strips)/(millis()-last_change);
+        last_change=millis();
+    }
+}
 
 void setup() {
     old_colour=convert(analogRead(A0));
-    last_change=millis()
+    last_change=millis();
 
     Serial.begin(9600);
     while (!Serial) {;} //some Arduinos take a while...
@@ -25,13 +49,14 @@ void setup() {
 
 void loop() {
     encoder();
-    if(StringCompleate) {
+    if(stringComplete) {
         Serial.print("Position: ");
         Serial.print(Position);
         Serial.print("  Velocity: ");
         Serial.print(Velocity);
         Serial.print( "Acceleration: ");
         Serial.println(Acceleration);
+    }
 }
 
 void serialEvent() { //This gets run every time after loop
@@ -45,27 +70,4 @@ void serialEvent() { //This gets run every time after loop
             inputString += inChar;
         }
     }
-}
-
-
-void encoder() {
-    colour=convert(analogRead(A0));
-    
-    if(colour!=old_colour) {debounce++;}
-    else {debounce=0;}
-    
-    if(debounce>2) {
-        debounce=0;
-        if ((colour-old_colour)%3)==1) {count++%Strips;}
-        else {count--%Strips;}
-        old_colour=colour;
-        Position=count*360/Strips;
-        Velocity=(360/Strips)/(millis()-last_change);
-        last_change=millis()
-}
-
-int convert(raw) {
-    if(raw<256) {return 0;}
-    else if(raw>767) {return 2;}
-    else {return 1;}
 }
