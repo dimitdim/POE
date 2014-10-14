@@ -5,20 +5,23 @@
 int Strips=36;
 int dbnc=3;
 
-int Position=0;
+int goal=180;
+int Position=3; // 3 just so we don't have to run current through arduino every fucking time
 float Velocity=0;
 float Acceleration=0;
+float oldVelocity=0;
 int count=0;
 int debounce=0;
 int old_colour=0;
 int colour=0;
 int last_change=0;
 boolean forward=true;
+int diff=0;
 
 String inputString="";
 String cmd="";
 int val=0;
-boolean stringComplete=false;
+boolean stringComplete=true;
 
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 Adafruit_DCMotor *myMotor = AFMS.getMotor(1);
@@ -40,10 +43,18 @@ void encoder() {
         else {count=(count-1)%Strips;}
         old_colour=colour;
         Position=(count*360/Strips);
-        Serial.println(millis()-last_change);
-        Velocity=(360000/Strips)/(millis()-last_change);
+        oldVelocity=Velocity;
+        Velocity=(360000.0/Strips)/(millis()-last_change);
+        Acceleration=(Velocity-oldVelocity)/(millis()-last_change);
         last_change=millis();
     }
+}
+
+void PID() {
+    diff=(goal-Position)%360;
+    if(diff<180){myMotor->run(BACKWARD);}
+    else if(diff>180){myMotor->run(FORWARD);}
+    else {myMotor->run(RELEASE);}
 }
 
 void setup() {
@@ -62,9 +73,7 @@ void setup() {
 
 void loop() {
     encoder();
-    if(Position<3){myMotor->run(RELEASE);}
-    else if(Position<16){myMotor->run(BACKWARD);}
-    else {myMotor->run(FORWARD);}
+    PID();
     
     if(stringComplete) {
         cmd=inputString.substring(0,inputString.indexOf('@')); //Split the input into command and value. The only reason this isn't '=' is because I like '@'
@@ -92,6 +101,7 @@ void loop() {
         Serial.print(analogRead(A0));
         Serial.print(" Converted: ");
         Serial.println(colour);
+        Serial.println();
     }
 }
 
