@@ -51,7 +51,10 @@ void encoder() {
 }
 
 void PID() {
-    diff=(goal-Position)%360;
+	if(abs (goal - Position) > 180){
+		errDiff = -1*(goal - Position)}
+	else(abs (goal - Position) <= 180){
+    	errDiff = goal-Position;
     if(diff<180){myMotor->run(BACKWARD);}
     else if(diff>180){myMotor->run(FORWARD);}
     else {myMotor->run(RELEASE);}
