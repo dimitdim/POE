@@ -2,8 +2,8 @@
 #include <Adafruit_MotorShield.h>
 #include "utility/Adafruit_PWMServoDriver.h"
 
-int Strips=32;
-int dbnc=10;
+int Strips=36;
+int dbnc=3;
 
 int Position=0;
 float Velocity=0;
@@ -14,8 +14,6 @@ int old_colour=0;
 int colour=0;
 int last_change=0;
 boolean forward=true;
-
-int i;
 
 String inputString="";
 String cmd="";
@@ -38,10 +36,11 @@ void encoder() {
     
     if(debounce>dbnc) {
         debounce=0;
-        count++;
-        count=count%Strips;
+        if(forward) {count=(count+1)%Strips;}
+        else {count=(count-1)%Strips;}
         old_colour=colour;
         Position=(count*360/Strips);
+        Serial.println(millis()-last_change);
         Velocity=(360000/Strips)/(millis()-last_change);
         last_change=millis();
     }
@@ -49,9 +48,9 @@ void encoder() {
 
 void setup() {
     AFMS.begin(880);
-    myMotor->setSpeed(1000);
+    myMotor->setSpeed(255);
     myMotor->run(FORWARD);
-    //myMotor->run(RELEASE);
+    myMotor->run(RELEASE);
     
     old_colour=convert(analogRead(A0));
     last_change=millis();
@@ -63,8 +62,9 @@ void setup() {
 
 void loop() {
     encoder();
-    //if(Position<3){if(Position>0){myMotor->run(RELEASE);}}
-    //else{myMotor->run(FORWARD);}
+    if(Position<3){myMotor->run(RELEASE);}
+    else if(Position<16){myMotor->run(BACKWARD);}
+    else {myMotor->run(FORWARD);}
     
     if(stringComplete) {
         cmd=inputString.substring(0,inputString.indexOf('@')); //Split the input into command and value. The only reason this isn't '=' is because I like '@'
