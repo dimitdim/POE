@@ -7,11 +7,11 @@ def calibrate(x_range, y_range):
 	plt.plot(x_range[0], y_range[0], "ro", markersize=30, label='white')
 	plt.plot(x_range[1], y_range[1], "ko", markersize=30, label='black')
 	plt.grid("on")
-	plt.xlim(0, 2)
-	plt.ylim(-1, 6)
 	plt.xlabel("Encoder Color", fontsize=17)
-	plt.ylabel("IR Reading (V)", fontsize=17)
+	plt.ylabel("Raw IR Reading", fontsize=17)
 	plt.title("IR Calibration Chart", fontsize=24)
+	plt.xlim(0, 2)
+	plt.ylim(0, 640)
 	plt.legend(fontsize=20, loc='upper left')
 	plt.show()
 
@@ -55,9 +55,9 @@ if __name__=="__main__":
 	print x_range[0]
 	print y_range
 
-	wave(x_range, y_range, 2)
+	#wave(x_range, y_range, 2)
 	#ninety(x_range, y_range, 2)
-	#calibrate([.5, 1.5], [0, 5])
+	calibrate([.5, 1.5], [40, 600])
 		
 	
 
