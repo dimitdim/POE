@@ -3,10 +3,21 @@
 #include "utility/Adafruit_PWMServoDriver.h"
 
 int Strips=36;
-int dbnc=3;
+int dbnc=5;
+int spd;
+int timechange;
+float ddiff;
+int olddiff=0;
+int deltatime=5;
+long lastm=0;
+float spda;
 
-int goal=180;
-int Position=3; // 3 just so we don't have to run current through arduino every fucking time
+float kp=.5;
+float ki=.001;
+float kd=.1;
+
+int goal=90;
+int Position=0;
 float Velocity=0;
 float Acceleration=0;
 float oldVelocity=0;
@@ -17,10 +28,11 @@ int colour=0;
 int last_change=0;
 boolean forward=true;
 int diff=0;
+long sum=0;
 
 String inputString="";
 String cmd="";
-int val=0;
+float val=0;
 boolean stringComplete=true;
 
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
@@ -40,32 +52,47 @@ void encoder() {
     if(debounce>dbnc) {
         debounce=0;
         if(forward) {count=(count+1)%Strips;}
-        else {count=(count-1)%Strips;}
+        else {count=(Strips+count-1)%Strips;}
         old_colour=colour;
         Position=(count*360/Strips);
         oldVelocity=Velocity;
-        Velocity=(360000.0/Strips)/(millis()-last_change);
-        Acceleration=(Velocity-oldVelocity)/(millis()-last_change);
+        timechange=millis()-last_change;
+        Velocity=(360000.0/Strips)/timechange;
+        Acceleration=(Velocity-oldVelocity)/timechange;
         last_change=millis();
+        Serial.print(Position)  && Serial.print(" : ") && Serial.print(diff) && Serial.print(" : ") && Serial.println(spda);
     }
 }
 
 void PID() {
-  int errDiff;
-	if(abs (goal - Position) > 180){
-		errDiff = -1*(goal - Position);}
-	else(abs (goal - Position) <= 180);{
-    	errDiff = goal-Position;
-    if(diff<180){myMotor->run(BACKWARD);}
-    else if(diff>180){myMotor->run(FORWARD);}
+    diff=((360+goal-Position)%360)-180;
+    if (millis()+lastm>deltatime) {
+        lastm=millis();
+        sum+=diff;
+        olddiff=diff;
+        ddiff=(diff-olddiff)/deltatime;
+    }
+    //Serial.println(diff);
+    spda=(diff*kp+ki*sum+kd*ddiff)*(255/180);
+    spd=max(-255,min(255,spda));
+    if(spd>0){
+        myMotor->setSpeed(spd);
+        myMotor->run(BACKWARD);
+        forward=false;
+    }
+    else if(spd<0){
+        myMotor->setSpeed(-spd);
+        myMotor->run(FORWARD);
+        forward=true;
+    }
     else {myMotor->run(RELEASE);}
-}}
+}
 
 void setup() {
     AFMS.begin(880);
     myMotor->setSpeed(255);
     myMotor->run(FORWARD);
-    myMotor->run(RELEASE);
+    //myMotor->run(RELEASE);
     
     old_colour=convert(analogRead(A0));
     last_change=millis();
@@ -86,6 +113,28 @@ void loop() {
         if (cmd.equals(String("dbnc"))) {
             dbnc=val;
             Serial.println() && Serial.print("Debounce set: ") && Serial.println(dbnc) && Serial.println();
+        }
+        
+        if (cmd.equals(String("diff"))) {
+            Serial.println() && Serial.print("diff: ") && Serial.println(diff) && Serial.println();
+        }        
+        if (cmd.equals(String("spd"))) {
+            Serial.println() && Serial.print("spd: ") && Serial.println(spd) && Serial.println();
+        }        
+        if (cmd.equals(String("sum"))) {
+            Serial.println() && Serial.print("sum: ") && Serial.println(sum) && Serial.println();
+        }
+        if (cmd.equals(String("kp"))) {
+            kp=val;
+            Serial.println() && Serial.print("kp: ") && Serial.println(kp) && Serial.println();
+        }
+        if (cmd.equals(String("ki"))) {
+            ki=val;
+            Serial.println() && Serial.print("ki: ") && Serial.println(ki) && Serial.println();
+        }
+        if (cmd.equals(String("kd"))) {
+            kd=val;
+            Serial.println() && Serial.print("kd: ") && Serial.println(kd) && Serial.println();
         }
         
         stringComplete=false;
