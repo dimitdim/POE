@@ -3,16 +3,16 @@
 #include "utility/Adafruit_PWMServoDriver.h"
 
 /*Function*/
-int function=0; //Choose funciton to follow
+int function=1; //Choose funciton to follow
 int delaytime=1500; //Delay before start of function (ms)
 int stepvalue=90; //Amplitude of step function (deg)
 int amplitude=120; //Amplitude of sine function (deg)
-int period=20000; //Period of since function (ms)
+int period=10000; //Period of sine function (ms)
 
 /*PID*/
 float kp=2; //PID Settings
 float ki=.001;
-float kd=1;
+float kd=10;
 
 /*Measured Data and Settings*/
 int Strips=36; //Number of Strips
@@ -25,7 +25,7 @@ int colour=0; //Colour of encoder stripe under sensor
 int count=0; //Position in stripes
 float Position=0; //Position in degrees
 boolean forward=true; //Direction
-float goal=90; //Desired final position (dynamic)
+float goal=0; //Desired final position (dynamic)
 
 float diff=0; //Signed distance from goal (P)
 float sum=0; //Running sum of distances (I)
