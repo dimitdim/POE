@@ -2,17 +2,22 @@
 #include <Adafruit_MotorShield.h>
 #include "utility/Adafruit_PWMServoDriver.h"
 
-/*PID*/
-float goal=90; //Desired final position
+/*Function*/
+int function=0; //Choose funciton to follow
+int delaytime=1500; //Delay before start of function (ms)
+int stepvalue=90; //Amplitude of step function (deg)
+int amplitude=120; //Amplitude of sine function (deg)
+int period=20000; //Period of since function (ms)
 
-float kp=1.5; //PID Settings
+/*PID*/
+float kp=2; //PID Settings
 float ki=.001;
-float kd=.2;
+float kd=1;
 
 /*Measured Data and Settings*/
 int Strips=36; //Number of Strips
 int cutoff=300; //Analog cutoff value (any value always between white and black)
-int dbnc=5; //Number of debounce retries
+int dbnc=2; //Number of debounce retries
 int deltatime=5; //Frequency of Integral/Derivative calculation (ms)
 
 /*Current Status*/
@@ -20,6 +25,7 @@ int colour=0; //Colour of encoder stripe under sensor
 int count=0; //Position in stripes
 float Position=0; //Position in degrees
 boolean forward=true; //Direction
+float goal=90; //Desired final position (dynamic)
 
 float diff=0; //Signed distance from goal (P)
 float sum=0; //Running sum of distances (I)
@@ -40,8 +46,23 @@ float val=0;
 char valtemp[33]; //Reserve space for intermediate step in converting String to float
 boolean stringComplete=false; //Don't run debuging info until a command is entered
 
+/*Motor*/
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 Adafruit_DCMotor *myMotor = AFMS.getMotor(1);
+
+void update_goal() {
+  if(millis()>delaytime) {
+    if(function==0) {
+      goal=stepvalue;
+    }
+    else if(function==1) {
+      goal=180+amplitude*sin((2*3.141/period)*millis());
+    }
+    else {
+      goal=0;
+    }
+  }
+}
 
 int convert(int raw) {
     if(raw<cutoff) {return 0;} //If the color is light, consider it white
@@ -60,7 +81,6 @@ void encoder() {
         else {count=(Strips+count-1)%Strips;} //C can't do mods of negatives
         old_colour=colour;
         Position=(count*360/Strips); //Update current Position
- //       Serial.print(Position)  && Serial.print(" : ") && Serial.print(diff) && Serial.print(" : ") && Serial.println(spda);
     }
 }
 
@@ -73,6 +93,8 @@ void PID() {
         sum+=diff;
         olddiff=diff;
         ddiff=(diff-olddiff)/deltatime;
+        //This is also a good time to output graph data:
+        Serial.print(goal) && Serial.print(",") && Serial.print(Position) && Serial.print(",") && Serial.print(diff) && Serial.print(",") && Serial.print(spd) && Serial.print(",") && Serial.println(millis());
     }
 
     spda=(diff*kp+ki*sum+kd*ddiff)*(255/180); //The PID Equation!!
@@ -158,9 +180,11 @@ void setup() {
     Serial.begin(9600);
     while (!Serial) {;} //some Arduinos take a while...
     inputString.reserve(128); //allows adding one byte at a time (it needs to be a buffer of sorts)
+    Serial.println("======Begin======"); //So I know where to start copy-pasting from
 }
 
 void loop() {
+    update_goal();
     encoder();
     PID();
     if(stringComplete) {communicate();}
